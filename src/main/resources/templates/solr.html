@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>全文检索</title>
+    <link rel="stylesheet" th:href="@{/js/easyUI/themes/gray/easyui.css}"></link>
+    <link rel="stylesheet" href="../js/easyUI/themes/icon.css"></link>
+    <script type="text/javascript" th:src="@{/js/easyUI/jquery.min.js}"></script>
+    <script type="text/javascript" src="../js/easyUI/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../js/easyUI/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="../js/easyUI/jquery.form.js"></script>
+</head>
+<body class="easyui-layout">
+    <script type="text/javascript">
+       $(function(){
+    	   $('#dg').datagrid({
+    		    loadMsg: "正在加载数据，请稍等...", 
+    		    url:'../solr/query',
+    		    fitColumns:true,
+    		    rownumbers: true,
+    		    toolbar:'#u_toolbar',
+    		    pagination:true,//设置是否分页
+    		    pageList:[10,20,30,50],
+    		    pageSize:10,
+    		    columns:[[
+		            { title: '文件/id', field: 'id', width: 200},
+		            { title: '内容', field: 'text', width: 600,formatter: function(value,row,index){
+	            		//var str="background-color:#ffee00;color:red;";
+	            		return value;
+                    }} 
+    		    ]]
+    		}); 
+    	   //getTable();
+    	   search();
+       })
+     
+       
+       //查询
+       function search(){
+    	   var text=$("#zxc").text();
+    	    $('#dg').datagrid({
+    			queryParams: {
+    				url:'../solr/query',
+    				text:text
+    			}
+    		});
+    		
+       }
+       
+    </script>
+    <div data-options="region:'center'" style="height: 100%">
+        <!-- 定义数据列表 -->
+	    <table id="dg" style="height:100%"></table>
+	    <span id="zxc" style="display:none" th:text="${session.value}"></span>
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hxzy.boot.dao.IMainMapper">
+
+<!--<cache></cache> -->
+    
+    <select id="getMenuByPid" parameterType="string" resultType="Tree">
+        select t.id,t.name text,t.iconcls iconCls,t.url attributes 
+		from t_sys_menu t 
+		where t.enable='1' and t.parentid=#{pid}
+		order by t.levelid 
+    </select>
+    
+    <select id="getAuthParentMenu" resultType="Tree" parameterType="string">
+        select t.id,t.name text,t.iconcls iconCls,t.url attributes from t_sys_menu t
+		where t.id in (
+				select m.parentid
+				from t_sys_user_role ur 
+				left join t_sys_role_menu rm on ur.roleid=rm.role_id 
+				left join t_sys_menu m on rm.menu_id=m.id
+				where ur.userid=#{0} and m.enable='1'
+				order by m.levelid 
+		)
+    </select>
+    
+    <select id="getAuthMenuByPid" resultType="Tree" parameterType="string" >
+        select t.id,t.name text,t.iconcls iconCls,t.url attributes
+		from t_sys_role_menu rm 
+		left join t_sys_menu t on rm.menu_id=t.id
+		left join t_sys_user_role ur on rm.role_id=ur.roleid
+		where ur.userid=#{0} and t.parentid=#{1}
+		order by t.levelid  
+    </select>
+    
+    <select id="getProduct" resultType="Product">
+        select p.name,p.proceeds,p.information from b_product p order by p.proceeds desc 
+    </select>
+    
+    <select id="getPower" resultType="Map">
+       select a.name,a.num,b.num1 from
+		(select sr.name name,count(srm.menu_id) num from  t_sys_role sr join t_sys_role_menu srm on sr.id=srm.role_id group by sr.id)  a,
+		(select sr.name name ,count(sur.roleid) num1 from t_sys_role sr join t_sys_user_role sur on sr.id=sur.roleid group by sr.id) b
+		where a.name=b.name
+    </select>
+    
+    <select id="getMoney" resultType="Map">
+      select c.CUSTOMER_NAME name,date_format(l.AUDITORDATE,'%Y-%m-%d') date,l.LOANAMOUNT money from b_loanapplication l join b_customer c on l.cid=c.cid
+    </select>
+    
+     <select id="getMoneys" resultType="Map">
+      select c.customer_name name,sum(l.loanamount) y 
+    	from b_loanapplication l join b_customer c where l.cid=c.cid group by c.cid order by sum(l.loanamount) desc ;
+    </select>
+    <select id="getImages" resultType="Map">
+     	select i.url,p.urlid,p.name from b_product p join t_images i on p.urlid=i.id order by p.proceeds desc limit 0,3
+    </select>
+</mapper>

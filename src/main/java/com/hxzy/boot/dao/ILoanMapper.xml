@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hxzy.boot.dao.ILoanMapper">
+
+<!--<cache></cache> -->
+    
+    <select id="query" parameterType="map" resultType="LoanApply">
+        select t.id,t.cid,c.customer_name cusname,t.pid,p.name proname,t.loancode,date_format(t.loandate,'%Y-%m-%d') loandate,t.loanamount,date_format(t.coveragedate,'%Y-%m-%d') coveragedate,
+		t.auditor,date_format(t.auditordate,'%Y-%m-%d') auditordate,t.status from b_loanapplication t
+		left join b_customer c on t.cid=c.cid 
+		left join b_product p on t.pid=p.id
+       <where>
+          <if test="loancode!=null and loancode!='' " >
+              t.loancode like '%${loancode}%'
+          </if>
+       </where>
+       order by t.loancode desc
+   </select>
+   
+   <insert id="add" parameterType="LoanApply">
+      insert into b_loanapplication (cid,pid,loancode,loandate,loanamount,status) 
+      values(#{cid,jdbcType=VARCHAR},#{pid,jdbcType=VARCHAR},#{loancode,jdbcType=VARCHAR},str_to_date(#{loandate,jdbcType=DATE},'%Y-%m-%d'),#{loanamount,jdbcType=NUMERIC},'0')
+   </insert>
+   
+   <update id="update" parameterType="LoanApply">
+      update b_loanapplication t 
+      <set>
+         <if test="cid!=null and cid!='' "> t.cid=#{cid},</if>
+         <if test="pid!=null and pid!='' "> t.pid=#{pid},</if>
+         <if test="loandate!=null and loandate!='' "> t.loandate=str_to_date(#{loandate},'%Y-%m-%d'),</if>
+         <if test="loanamount!=null and loanamount!='' "> t.loanamount=#{loanamount}</if>
+      </set>
+      <where> 
+         t.id=#{id}
+      </where>
+   </update>
+   
+   <delete id="del" parameterType="map">
+      delete from b_loanapplication  where id in (${ids})
+   </delete>
+   
+   <select id="getObjById" parameterType="String" resultType="LoanApply">
+        select t.id,t.cid,c.customer_name cusname,t.pid,p.name proname,t.loancode,t.loandate,t.loanamount,t.coveragedate,
+		t.auditor,t.auditordate,t.status from b_loanapplication t
+		left join b_customer c on t.cid=c.cid 
+		left join b_product p on t.pid=p.id
+        where t.id=#{id}
+   </select>
+   
+   <update id="toSub" parameterType="map">
+       update b_loanapplication t set t.status='1' where t.id in (${ids})
+   </update>
+
+</mapper>

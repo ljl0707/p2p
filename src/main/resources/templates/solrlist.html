@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>全文检索</title>
+    <link rel="stylesheet" th:href="@{/js/easyUI/themes/gray/easyui.css}"></link>
+    <link rel="stylesheet" href="../js/easyUI/themes/icon.css"></link>
+    <script type="text/javascript" th:src="@{/js/easyUI/jquery.min.js}"></script>
+    <script type="text/javascript" src="../js/easyUI/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../js/easyUI/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="../js/easyUI/jquery.form.js"></script>
+</head>
+<body class="easyui-layout">
+    <script type="text/javascript">
+       $(function(){
+    	   $('#dg').datagrid({
+    		    loadMsg: "正在加载数据，请稍等...", 
+    		    url:'../solr/query',
+    		    fitColumns:true,
+    		    rownumbers: true,
+    		    toolbar:'#u_toolbar',
+    		    pagination:true,//设置是否分页
+    		    pageList:[10,20,30,50],
+    		    pageSize:10,
+    		    columns:[[
+		            { title: '文件/id', field: 'id', width: 200},
+		            { title: '内容', field: 'text', width: 600,formatter: function(value,row,index){
+	            		//var str="background-color:#ffee00;color:red;";
+	            		return value;
+                    }} 
+    		    ]]
+    		}); 
+    	   //getTable();
+    		
+       })
+     
+       
+       //查询
+       function search(){
+    	   var text=$("#text").textbox('getValue');
+    	   var hi=$("input[name='hi']:checked").val();
+    	    $('#dg').datagrid({
+    			queryParams: {
+    				url:'../solr/query',
+    				text: text,
+    				hi:hi
+    			}
+    		});
+    		
+    	   //getTable();
+       }
+       //重置
+       function reSet(){
+    	   $("#text").textbox('setValue','');
+    	   $("input[name='hi'][value='0']").prop("checked",true);
+    	   search();
+       }
+      
+       //增加
+       function add(){
+    	   $("#id").val("");
+    	   $("#addOrUpdateDialog").dialog('open').dialog.setTitle('添加消息');
+       }
+       //保存
+       function submitForm(){
+    	   $.ajax({
+    		   type:"post",
+    		   url:"../mess/save",
+    		   data:$("#addOrUpdateForm").serialize(),
+    		   //data:{"lid":lid,"type":type,"context":context,"model":model,"id":id},
+    		   dataType:"text",
+    		   success:function(res){
+    			   if(res=='1'){
+    				   $("#addOrUpdateDialog").dialog('close');
+    				   $('#dg').datagrid('reload');
+    			   }
+    		   }
+    	   })
+       }
+       
+    </script>
+    <div data-options="region:'center'" style="height: 100%">
+        <!-- 按钮组 -->
+        <div id="u_toolbar">
+             <input id="text"  class="easyui-textbox">
+             <label>高亮显示:</label>
+			 <input  type="radio" name="hi" class="easyui-validatebox" value="1" /><label>是</label>
+			 <input  type="radio" name="hi" class="easyui-validatebox" value="0" checked="checked"/><label>否</label>
+             <a href="javascript:search()" class="easyui-linkbutton" data-options="iconCls:'icon-search'" >搜索</a>
+             <a href="javascript:reSet();" class="easyui-linkbutton" data-options="iconCls:'icon-clear'" >重置</a>
+             <a href="javascript:add();" class="easyui-linkbutton" data-options="iconCls:'icon-add'" >增加</a>
+	    </div>
+        <!-- 定义数据列表 -->
+	    <table id="dg" style="height:100%"></table>
+    </div>
+</body>
+</html>

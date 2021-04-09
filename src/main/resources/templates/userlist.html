@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <meta charset="UTF-8"/>
+    <title>主页</title>
+    <link rel="stylesheet" href="../js/easyUI/themes/default/easyui.css"></link>
+    <link rel="stylesheet" href="../js/easyUI/themes/icon.css"></link>
+    <script type="text/javascript" src="../js/easyUI/jquery.min.js"></script>
+    <script type="text/javascript" src="../js/easyUI/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../js/easyUI/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="../js/easyUI/jquery.form.js"></script>
+
+    <script type="text/javascript">
+        $(function(){
+        	getTable();
+        })
+        
+        function getTable(){
+        	$('#dg').datagrid({
+        		url:"../user/query",
+        		loadMsg:"正在加载...",
+        		fitColumns:true,
+        		toolbar: '#tb',
+        		striped:true,
+        		pagination:true,
+        		rownumbers:true,
+        		pageSize:20,
+        		pageList:[20,10,20,30,50],
+        		onDblClickRow: function(index,row){
+        			openinfoDialog(row);
+        	    },
+        	    columns:[[
+          		        { title: '', field: '', checkbox:true, width: 100 },
+      		            { title: '用户名', field: 'name', width: 100},  
+      		            { title: '性别', field: 'sex', width: 60,
+      		            	formatter: function(value){
+      		            		/* alert(JSON.stringify(row));
+      		            		alert(value); */
+      		            		var str="";
+      		            		if(value=="男"){
+      		            			str="<img src='../images/nans.png' style='width: 20px;height: 20px;'>";
+      		            		}else{
+      		            			str="<img src='../images/nvs.png' style='width: 20px;height: 20px;'>";
+      		            		}
+      		            		return str;
+      	                    }
+      		            },  
+      		            { title: '邮箱', field: 'email', width: 100},  
+      		            { title: 'QQ', field: 'qq', width: 100},  
+      		            { title: '微信', field: 'weixin', width: 100},  
+      		            { title: '注册日期', field: 'regtime', width: 100},  
+      		            { title: '是否启用', field: 'enable', width: 100,
+      		            	formatter: function(value){
+      		            		return value=="1"?"已启用":"未启用"
+      		                }
+      		            },
+      		            { title: '附件', field: 'filepath', width: 100,
+      		            	formatter: function(value,row,index){
+      		            		var str=value==undefined?'':value;
+      		            		return " <a href=\"javascript:downloadFile('"+row.id+"')\">"+str+"</a>  ";
+      		                }
+      		            },
+      		            { title: '操作', field: 'id', width: 100,
+      		            	formatter: function(value,row,index){
+      		            		var str = "";
+      		            		str +="  <a href=\"javascript:loadRoleAuthority('"+value+"')\">角色配置</a>  ";
+      		            		return str;
+      		    			}
+      					}
+          		    ]]
+        	});
+        }
+        
+        //查询
+        function search(){
+        	$('#dg').datagrid({
+        		url:"../user/query",
+        	    queryParams: {
+        	        name: $("#name").textbox('getValue')
+        	    }
+        	});
+        }
+        
+        //重置
+        function reSet(){
+        	$("#name").textbox('setValue','');
+        	search();
+        }
+        //提交表单 
+        function submitForm(){
+     	   $('#addOrUpdateForm').form('submit',{
+ 	   			onSubmit:function(){
+ 	   				return $(this).form('enableValidation').form('validate');
+ 	   			},    
+ 	   		    success:function(){    
+ 	   		    	saveOrUpdate();
+ 	   		    }
+    		});
+        }
+        //保存 
+        function saveOrUpdate(){
+    	    //上传附件需要用jquery.form中的ajaxSubmit方法
+	   		$('#addOrUpdateForm').ajaxSubmit({
+	   	        type: "post",
+	   	        url:"../user/save",
+	   	        dataType : 'text',
+	   	        success: function(data){
+	   	        	if(1==data){
+	   	        		//$.messager.alert('提示', '操作成功', 'info');
+	   	        		slide();
+	   	        		$('#addOrUpdateDialog').dialog('close');
+	   	        		$('#dg').datagrid('reload'); 
+	   	        	}else{
+	   	        		$.messager.alert('提示', '操作失败', 'info');
+	   	        	}
+	   	        },
+	   	        error: function(e,a,b){
+	   	        	$.messager.alert('提示', '操作失败', 'error');
+	   	        }
+	   	    });
+        }
+        //增加
+        function addDialog(){
+        	$('#addOrUpdateForm').form('clear');
+        	$('#enable').combobox('select',"1");
+        	$("input[name='sex'][value='男']").prop("checked",true);
+        	$("#yhzp").attr('src',"../images/mrtx.jpg");
+    	    $('#addOrUpdateDialog').dialog('open').dialog('setTitle', '新增用户');
+        }
+        //查看信息
+        function openinfoDialog(row){
+     	   //{"enable":"1","id":"10084","name":"dms","sex":"男"}
+     	   //alert(JSON.stringify(row));
+     	   $("#span_name").html("<Strong>"+row.name+"</Strong>");
+     	   $("#span_sex").text(row.sex);
+     	   $("#span_regtime").text(row.regtime);
+     	   $("#span_email").text(row.email);
+     	   $("#span_qq").text(row.qq);
+     	   $("#span_weixin").text(row.weixin);
+     	   $("#span_enable").text(row.enable==1?"已启用":"未启用");
+     	   if(row.filepath==null || row.filepath==undefined){
+ 			   $("#yhzpinfo").attr("src","../images/mrtx.jpg");
+ 		   }else{
+ 			   $("#yhzpinfo").attr("src","../user/downfile?id="+row.id+"&d="+new Date().getTime());
+ 		   }
+     	   $('#infoDialog').dialog('open').dialog('setTitle', '用户信息');
+        }
+        
+        //删除
+        function del(){
+        	//获取选择的行对象
+        	var array=$('#dg').datagrid('getChecked');
+        	var ids="";
+        	if(array.length==0){
+        		$.messager.alert('提示', '请选择要删除的数据...', 'info');
+        		return;
+        	}
+        	for(var i in array){
+    			if(ids==""){
+    				ids+=array[i].id;
+    			}else{
+    				ids+=","+array[i].id;
+    			}
+    		}
+        	$.ajax({
+        		type: "post",
+	   	        url:"../user/del",
+	   	        dataType : 'text',
+	   	        data:{"ids":ids},
+	   	        success: function(data){
+	   	        	if(data>0){
+	   	        		slide();
+	   	        		$('#dg').datagrid('reload'); 
+	   	        	}else{
+	   	        		$.messager.alert('提示', '操作失败', 'info');
+	   	        	}
+	   	        }
+        	})
+        }
+        
+        function slide(){
+            $.messager.show({
+                title:'提示',
+                msg:'操作成功',
+                timeout:2000,
+                showType:'slide'
+            });
+        }
+        //修改 
+        function updateDialog(){
+        	var array=$('#dg').datagrid('getSelections');
+        	if(array.length==0){
+        		$.messager.alert('提示', '亲,请选择要修改的数据!', 'info');
+        		return;
+        	}
+        	if(array.length>1){
+        		$.messager.alert('提示', '对不起,只能修改一条数据!', 'info');
+        		return;
+        	}
+        	var obj=array[0];
+        	//{"email":"123@qq.com","enable":"0","filepath":"E:upload4a1faae6g7424de9a3846&690.jpg","id":"10083","name":"admin","qq":"123","regtime":"2020-12-02","sex":"男","weixin":"456"}
+        	$("#u_name").textbox('setValue',obj.name);
+        	$("#u_password").textbox('setValue',obj.password);
+        	$("[name='sex']").each(function(){
+        		if($(this).val()==obj.sex){
+        			$(this).prop("checked",true);
+        		}
+        	})
+        	$("#regtime").datebox('setValue',obj.regtime);
+        	$("#email").textbox('setValue',obj.email);
+        	if(obj.filepath==null || obj.filepath==undefined){
+  			   $("#yhzp").attr("src","../images/mrtx.jpg");
+  		    }else{
+  			   $("#yhzp").attr("src","../user/downfile?id="+obj.id+"&d="+new Date().getTime());
+  		    }
+        	$("#qq").textbox('setValue',obj.qq);
+        	$("#weixin").textbox('setValue',obj.weixin);
+        	$("#enable").combobox('setValue',obj.enable);
+        	$("#u_id").val(obj.id);
+        	$('#addOrUpdateDialog').dialog('open').dialog('setTitle', '编辑用户');
+        	
+        	//console.log(JSON.stringify(obj));
+        }
+        
+        //导出excel
+        function exportExcel(){
+        	 var qname=$("#name").textbox('getValue');
+      	     location.href="../user/exportExcel?name="+qname;
+        }
+        
+        //附件下载
+        function downloadFile(id){
+     	   location.href="../user/downfile?id="+id;
+        }
+        
+        //用户分配角色
+        function loadRoleAuthority(userid){
+     	   $("#userid").val(userid);
+     	   $("#roleDialog").dialog('open').dialog('setTitle', '分配角色');
+     	   $.ajax({
+     		   type:"post",
+     		   url:"../user/getRoles",
+     		   data:{"userid":userid},
+     		   dataType:"json",
+     		   success:function(res){
+     			   var list=res.list;
+     			   var role=res.role;
+     			   $('#comboxRole').combobox({
+     				    data:list,
+     				    valueField:'id',
+     				    textField:'name'
+     			   });
+     			   $('#comboxRole').combobox('setValue',role.id);
+     		   }
+     	   })
+        }
+        
+        //保存用户分配好的角色
+        function saveUserRole(){
+     	   var userid=$("#userid").val();
+     	   var roleid=$('#comboxRole').combobox('getValue');
+     	   $.ajax({
+     		   type:"post",
+     		   url:"../user/saveUserRole",
+     		   data:{"userid":userid,"roleid":roleid},
+     		   dataType:"text",
+     		   success:function(res){
+     			   if(res>0){
+     				   slide();
+     				   $("#roleDialog").dialog('close');
+     			   }else{
+     				   $.messager.alert('提示', '操作失败', 'info');
+     			   }
+     		   },
+ 	   	       error: function(e,a,b){
+ 	   	        	$.messager.alert('提示', '操作失败', 'error');
+ 	   	       }
+     	   })
+        }
+    </script>
+</head>
+<body class="easyui-layout">
+    <div data-options="region:'center'" >
+         <!-- 按钮 -->
+         <div id="tb">
+             <label for="name">用户名:</label>
+             <input class="easyui-textbox" type="text" name="name" id="name" data-options="iconCls:'icon-search'" placeholder="用户名">
+		     <a href="javascript:search()" class="easyui-linkbutton" data-options="iconCls:'icon-search'" >查询</a>
+             <a href="javascript:reSet();" class="easyui-linkbutton" data-options="iconCls:'icon-clear'" >重置</a>
+             <a href="javascript:addDialog()" class="easyui-linkbutton" data-options="iconCls:'icon-add'">增加</a>
+             <a href="javascript:del()" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" >删除</a>
+             <a href="javascript:updateDialog()" class="easyui-linkbutton" data-options="iconCls:'icon-edit'">修改</a>
+             <a href="javascript:exportExcel()" class="easyui-linkbutton" data-options="iconCls:'icon-redo'">导出EXCEL</a>
+		 </div>
+		 <!-- 表格 -->
+         <table id="dg" class="easyui-datagrid" style="height:100%"></table>
+         <!-- 添加/修改对话框 -->
+		 <div id="addOrUpdateDialog" class="easyui-dialog" style="width: 460px; height: 470px; padding: 30px 20px" data-options="iconCls:'icon-man',modal:true,closed:true" >
+			<form id="addOrUpdateForm" method="POST" enctype="multipart/form-data">
+				<input type="hidden" id="u_id" name="id"/>
+				<div  style="position: relative;">
+					<div style="height: 30px;margin-bottom: 3px;">
+						<label>用户姓名:</label> <input id="u_name" name="name" class="easyui-textbox" data-options="required:true" />
+					</div>
+					<div style="height: 30px;margin-bottom: 3px;">
+						<label>用户密码:</label> <input id="u_password" name="password" class="easyui-textbox" required="true"/>
+					</div>
+					<div style="height: 30px;">
+						<label>用户性别:</label>
+						<input  type="radio" name="sex" class="easyui-validatebox" value="男"/><label>男</label>
+						<input  type="radio" name="sex" class="easyui-validatebox" value="女"/><label>女</label>
+					</div>
+					<div style="height: 30px;margin-bottom: 3px;">
+						<label>入职时间:</label> <input id="regtime" name="regtime" class="easyui-datebox"/>
+					</div>
+					<div style="height: 30px;margin-bottom: 3px;">
+						<label>Email:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label> <input id="email" name="email" class="easyui-textbox" validType="email"/>
+					</div>
+				</div>
+				<div style="position: relative;margin:-170px 0 0px 260px;">
+				    <img id="yhzp" alt="用户照片" src="../images/mrtx.jpg" style="width: 130px;height: 170px;"/>
+				</div>
+				<div style="height: 30px;margin-bottom: 3px;">
+					    <label>用户  QQ:</label> <input id="qq" name="qq"  class="easyui-textbox" />
+				</div>
+				<div style="height: 30px;margin-bottom: 3px;">
+					<label>用户微信:</label> <input id="weixin" name="weixin" class="easyui-textbox"/>
+				</div>
+				<div style="height: 30px;margin-bottom: 3px;">
+					<label>是否启用:</label>
+					<select id="enable" name="enable" class="easyui-combobox" panelHeight="auto" style="width: 170px;" >
+						<option  value="1">已启用</option>
+						<option  value="0">未启用</option>
+					</select>
+				</div>
+				<div style="height: 30px;margin-bottom: 3px;">
+					<label>用户照片:</label>
+					<input   name="userfile" size="40" class="easyui-filebox" data-options="prompt:'资料...'" />
+				</div>
+			</form>
+			<div style="margin: 20px 20px 5px 80px;">
+				<a href="javascript:submitForm()" class="easyui-linkbutton" data-options="iconCls:'icon-save'" >保存</a>
+				<a href="javascript:dialogClose()" class="easyui-linkbutton" iconCls="icon-clear">取消</a>
+			</div>
+		</div>
+		
+		<!-- 详细信息模态框 -->
+		<div id="infoDialog" class="easyui-dialog" style="width: 400px; height: 360px; padding: 30px 20px" data-options="iconCls:'icon-save',modal:true,closed:true" >
+			<form id="infoForm" >
+				<div  style="position: relative;">
+					<div style="height: 30px;">
+						<label>用户姓名:</label> <span id="span_name"></span>
+					</div>
+					<div style="height: 30px;">
+						<label>用户性别:</label><span id="span_sex"></span>
+					</div>
+					<div style="height: 30px;">
+						<label>入职时间:</label> <span id="span_regtime"></span>
+					</div>
+					<div style="height: 30px;">
+						<label>Email:&nbsp;&nbsp;&nbsp;&nbsp;</label> <span id="span_email"></span>
+					</div>
+					<div style="height: 30px;">
+					    <label>用户  QQ:</label> <span id="span_qq"></span>
+				    </div>
+				    <div style="height: 30px;">
+					   <label>用户微信:</label> <span id="span_weixin"></span>
+				    </div>
+				    <div style="height: 30px;"> 
+						<label>是否启用:</label><span id="span_enable"></span>
+					</div>
+				</div>
+				<div style="position: relative;margin:-205px 0 0 180px;">
+				    <img id="yhzpinfo" alt="用户照片" src="../images/mrtx.jpg" style="width: 130px;height: 190px;"/>
+				</div>
+			</form>
+		</div>
+		
+		<!-- 分配角色模态框 -->
+		<div id="roleDialog" class="easyui-dialog" style="width: 300px; height: 160px; padding: 20px 20px" data-options="modal:true,closed:true,toolbar: [{
+                    text:'保存',
+                    iconCls:'icon-save',
+                    handler:function(){
+                         saveUserRole();
+                    }
+                }]" >
+            <input type="hidden" id="userid">
+			<label>选择角色:</label> <input id="comboxRole" name="comboxRole" >
+		</div>
+    </div>
+</body>
+</html>

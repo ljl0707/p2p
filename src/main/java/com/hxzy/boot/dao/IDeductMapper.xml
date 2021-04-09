@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hxzy.boot.dao.IDeductMapper">
+
+<!--<cache></cache> -->
+    
+    <select id="query" parameterType="map" resultType="LoanApply"> 
+        select t.id,t.cid,c.customer_name cusname,t.pid,p.name proname,t.loancode,date_format(t.loandate,'%Y-%m-%d') loandate,t.loanamount,date_format(t.coveragedate,'%Y-%m-%d') coveragedate,
+		t.auditor,date_format(t.auditordate,'%Y-%m-%d') auditordate,date_format(t.appointdate,'%Y-%m-%d %T') appointdate,t.status from b_loanapplication t
+		left join b_customer c on t.cid=c.cid 
+		left join b_product p on t.pid=p.id
+       <where>
+          <if test="loancode!=null and loancode!='' " >
+              t.loancode like '%${loancode}%'
+          </if>
+          and t.status in ('2','4','5')
+       </where>
+       order by t.loancode desc
+   </select>
+  
+   <select id="getDeductRecord" parameterType="String" resultType="Deduct">
+       select t.amount loanAmount,t.ordernum,t.serialnum,t.platform,t.deducttime,t.deductresult deductRes,t.remark from b_deduct t
+       where t.lid=#{id}
+   </select>
+   
+   <sql id="getDeductSql">
+        select a.id,a.loanamount,b.customer_name cusNm,b.id_card credtNo,b.mobile mobileNo,b.email,
+		c.bankno,c.bankname,c.cardno acntNo,c.cardname acntNm,c.province acntPro,c.city acntCity 
+		from B_Loanapplication a 
+		left join B_Customer b on a.cid=b.cid
+		left join B_Consumer_bank c on b.cid=c.cid
+   </sql>
+   
+   <select id="getDeductListByIds" parameterType="Map" resultType="Deduct">
+        <include refid="getDeductSql"></include>
+        <where>
+            c.active=1 and a.id in (${ids})
+        </where>
+   </select>
+   
+   <insert id="AddDeduct" parameterType="Deduct"> 
+        insert into b_deduct (lid,amount,ordernum,serialnum,deductresult,deducttime) 
+        values (#{id,jdbcType=VARCHAR},#{loanAmount,jdbcType=NUMERIC},#{orderNum,jdbcType=VARCHAR},#{serialNum,jdbcType=VARCHAR},#{deductRes,jdbcType=VARCHAR},#{deductTime,jdbcType=DATE})
+   </insert>
+   
+   <update id="upLoanAppState" parameterType="map">
+        update b_loanapplication a set a.status=#{state} where a.id=#{id}
+   </update>
+   
+   <update id="saveAppiontDate" parameterType="map">
+        update b_loanapplication t set t.appointdate=str_to_date(#{appointdate},'%Y-%m-%d %T') where t.id in (${ids}) and t.status in ('2','5')
+   </update>
+   
+   <select id="getAppiontRecord" resultType="Deduct">
+        <include refid="getDeductSql"></include>
+        <where>
+            c.active=1 and a.status in ('2','5') and str_to_date(date_format(a.appointdate,'%Y-%m-%d %T'),'%Y-%m-%d %T') <![CDATA[<=]]> str_to_date(date_format(sysdate(),'%Y-%m-%d %T'),'%Y-%m-%d %T')
+        </where>
+   </select>
+</mapper>
